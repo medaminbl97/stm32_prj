@@ -90,16 +90,20 @@ def install_stlink():
 
 
 def get_micropython(path: Path):
-    """Clone the MicroPython repository and set up submodules."""
+    """Clone the MicroPython repository, switch to a specific branch, and set up submodules."""
     run_command(
         "git clone --recurse-submodules https://github.com/micropython/micropython.git",
         cwd=path,
     )
+    # Switch to the v1.22-release branch
+    run_command("git checkout v1.22-release", cwd=path / "micropython")
+    
     run_command("git submodule update --init", cwd=path / "micropython")
     run_command("mkdir modules", cwd=path / "micropython/ports/stm32")
     manifest = path / "micropython/ports/stm32/boards/NUCLEO_H743ZI/manifest.py"
     with open(manifest, "a") as f:
         f.write('freeze("$(PORT_DIR)/modules/app")')
+
 
 
 def compile_firmware():
@@ -170,15 +174,16 @@ def setup_stm32_project(delete_current: bool):
     stm32_path.mkdir(parents=True, exist_ok=True)
     arm_gcc_compiler_path.mkdir(parents=True, exist_ok=True)
     app_path.mkdir(parents=True, exist_ok=True)
-    with open(app_path / "app.py", "w") as f :
-        f.write("""
-                import pyb
+    with open(app_path / "app.py", "w") as f:
+        f.write(
+            """
+import pyb
 
-                def run():
-                    print("run function is runing")
-                    pyb.LED(1).on()
-                """
-                )
+def run():
+    print("run function is runing")
+    pyb.LED(1).on()
+"""
+        )
     vscode_path.mkdir(parents=True, exist_ok=True)
 
     # Install compiler
